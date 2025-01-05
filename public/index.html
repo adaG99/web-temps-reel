@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QUIZZLY</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <h1>QUIZZLY</h1>
+
+    <div id="level-selection">
+      <h2>Select a Level</h2>
+      <button onclick="selectLevel('easy')">Easy</button>
+      <button onclick="selectLevel('medium')">Medium</button>
+      <button onclick="selectLevel('hard')">Hard</button>
+    </div>
+
+    <div id="quiz-container" class="hidden">
+      <h2 id="question"></h2>
+      <div id="options"></div>
+      <button id="next-question" class="hidden" onclick="loadNextQuestion()">Next Question</button>
+    </div>
+
+    <div id="scoreboard" class="hidden">
+      <h2>Scores</h2>
+      <ul id="scores-list"></ul>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
