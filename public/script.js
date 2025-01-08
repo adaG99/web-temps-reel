@@ -1,68 +1,106 @@
 const socket = io();
-let currentLevel = '';
-let currentQuestionIndex = 0;
-let questions = [];
+let pseudo = null;
+let chartInstance = null; 
 
-const levelSelection = document.getElementById('level-selection');
-const quizContainer = document.getElementById('quiz-container');
-const scoreboard = document.getElementById('scoreboard');
-const questionElem = document.getElementById('question');
-const optionsElem = document.getElementById('options');
-const nextQuestionButton = document.getElementById('next-question');
-
-function selectLevel(level) {
-  currentLevel = level;
-  socket.emit('selectLevel', level);
-  levelSelection.classList.add('hidden');
-  quizContainer.classList.remove('hidden');
-}
-
-socket.on('quizData', (quizData) => {
-  questions = quizData;
-  currentQuestionIndex = 0;
-  loadQuestion();
-});
-
-function loadQuestion() {
-  if (currentQuestionIndex < questions.length) {
-    const questionData = questions[currentQuestionIndex];
-    questionElem.textContent = questionData.question;
-    optionsElem.innerHTML = '';
-    questionData.options.forEach((option, index) => {
-      const button = document.createElement('button');
-      button.textContent = option;
-      button.onclick = () => submitAnswer(index);
-      optionsElem.appendChild(button);
-    });
-  } else {
-    quizContainer.classList.add('hidden');
-    scoreboard.classList.remove('hidden');
+function enterPoll() {
+  const input = document.getElementById("pseudo-input");
+  if (input.value.trim() === "") {
+    alert("Veuillez entrer un pseudo !");
+    return;
   }
+  pseudo = input.value.trim();
+  document.getElementById("pseudo-screen").style.display = "none";
+  document.getElementById("poll-screen").style.display = "block";
 }
 
-function submitAnswer(answerIndex) {
-  const username = prompt('Enter your username:');
-  socket.emit('submitAnswer', {
-    username,
-    questionIndex: currentQuestionIndex,
-    answerIndex,
-    level: currentLevel
+socket.on("init", ({ question, options, votes }) => {
+  document.getElementById("quiz-question").textContent = question;
+  const voteOptionsDiv = document.getElementById("vote-options");
+  const resultsList = document.getElementById("results-list");
+
+  voteOptionsDiv.innerHTML = "";
+  resultsList.innerHTML = "";
+
+  Object.keys(options).forEach((optionKey) => {
+    const button = document.createElement("button");
+    button.textContent = options[optionKey];
+    button.onclick = () => castVote(optionKey);
+    voteOptionsDiv.appendChild(button);
+
+    
+    const resultItem = document.createElement("li");
+    resultItem.id = `${optionKey}-result`;
+    resultItem.textContent = `${options[optionKey]} : ${votes[optionKey]} vote(s)`;
+    resultsList.appendChild(resultItem);
   });
-  currentQuestionIndex++;
-  nextQuestionButton.classList.remove('hidden');
-}
 
-function loadNextQuestion() {
-  nextQuestionButton.classList.add('hidden');
-  loadQuestion();
-}
-
-socket.on('updateScores', (scores) => {
-  const scoresList = document.getElementById('scores-list');
-  scoresList.innerHTML = '';
-  for (const [user, score] of Object.entries(scores)) {
-    const li = document.createElement('li');
-    li.textContent = `${user}: ${score}`;
-    scoresList.appendChild(li);
-  }
+  
+  displayFinalResults(votes, options);
 });
+
+
+socket.on("updateVotes", (votes) => {
+  Object.keys(votes).forEach((optionKey) => {
+    const resultItem = document.getElementById(`${optionKey}-result`);
+    if (resultItem) {
+      resultItem.textContent = `${votes[optionKey]} vote(s)`;
+    }
+  });
+
+
+  displayFinalResults(votes);
+});
+
+// Envoyer un vote
+function castVote(option) {
+  if (pseudo) {
+    socket.emit("castVote", { option, pseudo });
+  } else {
+    alert("Pseudo invalide !");
+  }
+}
+function viewFinalResults() {
+  const finalResultsDiv = document.getElementById("final-results");
+  if (finalResultsDiv.style.display === "none") {
+    finalResultsDiv.style.display = "block"; 
+  } else {
+    finalResultsDiv.style.display = "none"; 
+  }
+}
+
+
+
+function displayFinalResults(votes, options) {
+  const ctx = document.getElementById("final-chart").getContext("2d");
+
+  
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
+  const labels = Object.values(options || { option1: "Option 1", option2: "Option 2", option3: "Option 3" });
+  const data = Object.values(votes);
+
+
+  chartInstance = new Chart(ctx, {
+    type: "doughnut",
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: "Votes",
+          data: data,
+          backgroundColor: ["#4caf50", "#2196f3", "#f44336"],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "top" },
+        tooltip: { enabled: true },
+      },
+    },
+  });
+}
