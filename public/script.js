@@ -78,7 +78,7 @@ function displayFinalResults(votes, options) {
     chartInstance.destroy();
   }
 
-  const labels = Object.values(options || { option1: "Option 1", option2: "Option 2", option3: "Option 3" });
+  const labels = Object.values(options || { option1: "Real madrid", option2: "Liverpool", option3: "Manchester city" });
   const data = Object.values(votes);
 
 
